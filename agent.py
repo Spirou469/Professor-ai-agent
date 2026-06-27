@@ -1,17 +1,10 @@
-"""
-Professor AI Agent - CROO Hackathon
-A paid AI teaching agent on the CROO Agent Protocol (CAP)
-"""
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
 import os
 
 app = Flask(__name__)
-CORS(app)
-
-app = Flask(__name__)
+CORS(app, origins="*")
 
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 model = genai.GenerativeModel("gemini-1.5-flash")
@@ -19,7 +12,7 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 AGENT_INFO = {
     "name": "Professor AI",
     "version": "1.0.0",
-    "description": "Your personal AI teacher. Ask me anything about any subject — math, science, history, languages, coding, and more.",
+    "description": "Your personal AI teacher. Ask me anything about any subject.",
     "price_usdc": 2.0,
     "capabilities": ["Explain any subject", "Create exercises", "Generate study plans", "Multilingual support"],
     "languages": ["English", "French", "Spanish", "Arabic", "Portuguese", "Swahili"],
@@ -27,11 +20,10 @@ AGENT_INFO = {
     "github": "https://github.com/Spirou469/Professor-ai-agent"
 }
 
-SYSTEM_PROMPT = """You are Professor AI, the world's best personal tutor. You teach any subject to anyone at any level.
+SYSTEM_PROMPT = """You are Professor AI, the world's best personal tutor.
 - Use simple clear language adapted to the student
-- Give concrete examples and analogies  
+- Give concrete examples and analogies
 - Break complex concepts into small steps
-- Encourage and motivate the student
 - Respond in the same language the student uses
 - End with a quick summary and one practice question"""
 
@@ -43,10 +35,16 @@ def home():
 def info():
     return jsonify(AGENT_INFO)
 
-@app.route("/teach", methods=["POST"])
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "healthy", "agent": "Professor AI"})
+
+@app.route("/teach", methods=["POST", "OPTIONS"])
 def teach():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
     try:
-        data = request.get_json()
+        data = request.get_json(force=True)
         if not data or "question" not in data:
             return jsonify({"error": "Please provide a question"}), 400
         question = data.get("question", "")
@@ -58,43 +56,41 @@ def teach():
             "status": "success",
             "agent": "Professor AI",
             "question": question,
-            "level": level,
-            "subject": subject,
             "answer": response.text,
             "price_paid_usdc": 2.0
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/exercise", methods=["POST"])
+@app.route("/exercise", methods=["POST", "OPTIONS"])
 def generate_exercise():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
     try:
-        data = request.get_json()
+        data = request.get_json(force=True)
         subject = data.get("subject", "mathematics")
         level = data.get("level", "intermediate")
         count = min(data.get("count", 3), 5)
-        prompt = f"Create {count} practice exercises for {subject} at {level} level. Include question, hints, and answer with explanation."
+        prompt = f"Create {count} practice exercises for {subject} at {level} level with answers."
         response = model.generate_content(SYSTEM_PROMPT + "\n\n" + prompt)
-        return jsonify({"status": "success", "subject": subject, "level": level, "exercises": response.text, "price_paid_usdc": 2.0})
+        return jsonify({"status": "success", "exercises": response.text, "price_paid_usdc": 2.0})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/study-plan", methods=["POST"])
+@app.route("/study-plan", methods=["POST", "OPTIONS"])
 def study_plan():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
     try:
-        data = request.get_json()
+        data = request.get_json(force=True)
         subject = data.get("subject", "")
         goal = data.get("goal", "")
         weeks = data.get("duration_weeks", 4)
-        prompt = f"Create a {weeks}-week study plan for {subject}. Goal: {goal}. Include weekly objectives, daily tasks, resources, and checkpoints."
+        prompt = f"Create a {weeks}-week study plan for {subject}. Goal: {goal}."
         response = model.generate_content(SYSTEM_PROMPT + "\n\n" + prompt)
-        return jsonify({"status": "success", "subject": subject, "goal": goal, "study_plan": response.text, "price_paid_usdc": 2.0})
+        return jsonify({"status": "success", "study_plan": response.text, "price_paid_usdc": 2.0})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({"status": "healthy", "agent": "Professor AI"})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
