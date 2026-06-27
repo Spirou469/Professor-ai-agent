@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: professor-ai-agent
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn agent:app
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: PORT
+        value: 5000
