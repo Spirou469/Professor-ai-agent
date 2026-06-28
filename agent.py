@@ -60,43 +60,25 @@ def search_amazon_products(niche, max_results=10):
         return products
     except Exception as e:
         return {"error": str(e)}
-
-def analyze_with_ai(products_data, niche):
-    """Analyze products with Hugging Face AI"""
-    try:
-        products_text = "\n".join([
-            f"- {p['title']}: ${p['price']}, Rating: {p['rating']}/5 ({p['ratings_total']} reviews), Bestseller: {p['is_bestseller']}"
-            for p in products_data[:5]
-        ])
-
-        prompt = f"""Analyze these Amazon products for dropshipping potential in the '{niche}' niche:
-
-{products_text}
-
-For each product provide:
-1. Dropshipping potential (High/Medium/Low)
-2. Estimated supplier price (usually 20-30% of Amazon price)
-3. Estimated profit margin
-4. Competition level
-5. Recommendation
-
-Be concise and practical."""
-
-        response = requests.post(
-            "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3",
-            headers={"Authorization": f"Bearer {HF_API_KEY}"},
-            json={"inputs": prompt, "parameters": {"max_new_tokens": 800, "temperature": 0.7}},
-            timeout=60
-        )
-        result = response.json()
-        if isinstance(result, list) and len(result) > 0:
-            return result[0].get("generated_text", "Analysis unavailable")
-        elif isinstance(result, dict) and "error" in result:
-            return f"AI analysis unavailable: {result['error']}"
-        return str(result)
-    except Exception as e:
-        return f"Analysis error: {str(e)}"
-
+def analyze_with_ai(products, niche):
+    """Smart analysis without external AI API"""
+    analysis = f"=== DROPSHIPPING ANALYSIS: {niche.upper()} ===\n\n"
+    for i, p in enumerate(products[:5], 1):
+        supplier_price = round(p['price'] * 0.25, 2)
+        margin = round(p['price'] - supplier_price, 2)
+        margin_pct = round((margin / p['price'] * 100) if p['price'] > 0 else 0, 1)
+        competition = "Low 🟢" if p['ratings_total'] < 500 else "Medium 🟡" if p['ratings_total'] < 2000 else "High 🔴"
+        potential = "🔥 HIGH" if margin > 30 and p['rating'] >= 4.3 else "✅ MEDIUM" if margin > 15 else "⚠️ LOW"
+        analysis += f"""Product {i}: {p['title'][:60]}...
+  💰 Amazon Price: ${p['price']}
+  🏭 Est. Supplier Price: ${supplier_price}
+  📈 Est. Profit Margin: ${margin} ({margin_pct}%)
+  ⭐ Rating: {p['rating']}/5 ({p['ratings_total']} reviews)
+  🏆 Competition: {competition}
+  🎯 Dropship Potential: {potential}
+  🔗 {p['url']}\n\n"""
+    return analysis
+    
 def calculate_metrics(products):
     """Calculate dropshipping metrics"""
     if not products:
