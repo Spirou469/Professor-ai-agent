@@ -1,13 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import google.generativeai as genai
 import os
+import requests
 
 app = Flask(__name__)
 CORS(app, origins="*")
 
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-2.0-flash")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
+MODEL = "meta-llama/llama-3.2-3b-instruct:free"
 
 AGENT_INFO = {
     "name": "Professor AI",
@@ -26,6 +26,24 @@ SYSTEM_PROMPT = """You are Professor AI, the world's best personal tutor.
 - Break complex concepts into small steps
 - Respond in the same language the student uses
 - End with a quick summary and one practice question"""
+
+def ask_ai(prompt):
+    response = requests.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "model": MODEL,
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ]
+        }
+    )
+    data = response.json()
+    return data["choices"][0]["message"]["content"]
 
 @app.route("/", methods=["GET"])
 def home():
@@ -51,12 +69,12 @@ def teach():
         level = data.get("level", "intermediate")
         subject = data.get("subject", "general")
         prompt = f"Student level: {level}\nSubject: {subject}\nQuestion: {question}"
-        response = model.generate_content(SYSTEM_PROMPT + "\n\n" + prompt)
+        answer = ask_ai(prompt)
         return jsonify({
             "status": "success",
             "agent": "Professor AI",
             "question": question,
-            "answer": response.text,
+            "answer": answer,
             "price_paid_usdc": 2.0
         })
     except Exception as e:
@@ -72,8 +90,8 @@ def generate_exercise():
         level = data.get("level", "intermediate")
         count = min(data.get("count", 3), 5)
         prompt = f"Create {count} practice exercises for {subject} at {level} level with answers."
-        response = model.generate_content(SYSTEM_PROMPT + "\n\n" + prompt)
-        return jsonify({"status": "success", "exercises": response.text, "price_paid_usdc": 2.0})
+        answer = ask_ai(prompt)
+        return jsonify({"status": "success", "exercises": answer, "price_paid_usdc": 2.0})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -87,8 +105,8 @@ def study_plan():
         goal = data.get("goal", "")
         weeks = data.get("duration_weeks", 4)
         prompt = f"Create a {weeks}-week study plan for {subject}. Goal: {goal}."
-        response = model.generate_content(SYSTEM_PROMPT + "\n\n" + prompt)
-        return jsonify({"status": "success", "study_plan": response.text, "price_paid_usdc": 2.0})
+        answer = ask_ai(prompt)
+        return jsonify({"status": "success", "study_plan": answer, "price_paid_usdc": 2.0})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
