@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app, origins="*")
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
-MODEL = "meta-llama/llama-3.2-3b-instruct:free"
+MODEL = "mistralai/mistral-7b-instruct:free"
 
 AGENT_INFO = {
     "name": "Professor AI",
