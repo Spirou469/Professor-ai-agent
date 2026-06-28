@@ -32,7 +32,9 @@ def ask_ai(prompt):
         "https://openrouter.ai/api/v1/chat/completions",
         headers={
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://professor-ai-agent.onrender.com",
+            "X-Title": "Professor AI"
         },
         json={
             "model": MODEL,
@@ -43,8 +45,12 @@ def ask_ai(prompt):
         }
     )
     data = response.json()
-    return data["choices"][0]["message"]["content"]
-
+    if "choices" in data:
+        return data["choices"][0]["message"]["content"]
+    elif "error" in data:
+        return f"Erreur API: {data['error']['message']}"
+    else:
+        return f"Réponse inattendue: {str(data)}"
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({"status": "active", "agent": AGENT_INFO})
