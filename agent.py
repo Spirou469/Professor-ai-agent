@@ -6,104 +6,108 @@ import requests
 app = Flask(__name__)
 CORS(app, origins="*")
 
-RAINFOREST_API_KEY = os.environ.get("RAINFOREST_API_KEY")
-HF_API_KEY = os.environ.get("HF_API_KEY")
+SERP_API_KEY = os.environ.get("SERP_API_KEY")
 
 AGENT_INFO = {
     "name": "Dropship Intelligence",
-    "version": "1.0.0",
-    "description": "Find winning dropshipping products on Amazon. Get margin analysis, competition level, and trending niches automatically.",
+    "version": "2.0.0",
+    "description": "Find winning dropshipping products. Get margin analysis, competition level, and trending niches automatically.",
     "price_usdc": 5.0,
     "capabilities": [
         "Find trending products by niche",
         "Analyze profit margins",
         "Competition level analysis",
-        "Best seller detection",
-        "Price history tracking"
+        "Google Shopping data",
+        "Price comparison across stores"
     ],
     "author": "Spirou469",
     "github": "https://github.com/Spirou469/Professor-ai-agent"
 }
 
-def search_amazon_products(niche, max_results=10):
-    """Search Amazon products via Rainforest API"""
+def search_products(niche, max_results=10):
+    """Search products via SerpAPI Google Shopping"""
     try:
         params = {
-            "api_key": RAINFOREST_API_KEY,
-            "type": "search",
-            "amazon_domain": "amazon.com",
-            "search_term": niche,
-            "sort_by": "featured",
-            "page": "1"
+            "api_key": SERP_API_KEY,
+            "engine": "google_shopping",
+            "q": niche,
+            "num": max_results,
+            "gl": "us",
+            "hl": "en"
         }
         response = requests.get(
-            "https://api.rainforestapi.com/request",
+            "https://serpapi.com/search",
             params=params,
             timeout=30
         )
         data = response.json()
         products = []
-        if "search_results" in data:
-            for item in data["search_results"][:max_results]:
+        if "shopping_results" in data:
+            for item in data["shopping_results"][:max_results]:
+                price_str = item.get("price", "0")
+                try:
+                    price = float(price_str.replace("$", "").replace(",", "").split()[0])
+                except:
+                    price = 0
                 product = {
                     "title": item.get("title", "N/A"),
-                    "price": item.get("price", {}).get("value", 0),
+                    "price": price,
+                    "source": item.get("source", "N/A"),
                     "rating": item.get("rating", 0),
-                    "ratings_total": item.get("ratings_total", 0),
-                    "asin": item.get("asin", ""),
-                    "url": f"https://amazon.com/dp/{item.get('asin', '')}",
-                    "is_bestseller": item.get("is_bestseller", False),
-                    "image": item.get("image", "")
+                    "reviews": item.get("reviews", 0),
+                    "link": item.get("link", ""),
+                    "thumbnail": item.get("thumbnail", "")
                 }
                 if product["price"] > 0:
                     products.append(product)
         return products
     except Exception as e:
         return {"error": str(e)}
-def analyze_with_ai(products, niche):
-    """Smart analysis without external AI API"""
-    analysis = f"=== DROPSHIPPING ANALYSIS: {niche.upper()} ===\n\n"
-    for i, p in enumerate(products[:5], 1):
-        supplier_price = round(p['price'] * 0.25, 2)
-        margin = round(p['price'] - supplier_price, 2)
-        margin_pct = round((margin / p['price'] * 100) if p['price'] > 0 else 0, 1)
-        competition = "Low 🟢" if p['ratings_total'] < 500 else "Medium 🟡" if p['ratings_total'] < 2000 else "High 🔴"
-        potential = "🔥 HIGH" if margin > 30 and p['rating'] >= 4.3 else "✅ MEDIUM" if margin > 15 else "⚠️ LOW"
-        analysis += f"""Product {i}: {p['title'][:60]}...
-  💰 Amazon Price: ${p['price']}
-  🏭 Est. Supplier Price: ${supplier_price}
-  📈 Est. Profit Margin: ${margin} ({margin_pct}%)
-  ⭐ Rating: {p['rating']}/5 ({p['ratings_total']} reviews)
-  🏆 Competition: {competition}
-  🎯 Dropship Potential: {potential}
-  🔗 {p['url']}\n\n"""
-    return analysis
-    
+
 def calculate_metrics(products):
     """Calculate dropshipping metrics"""
     if not products:
         return {}
     prices = [p["price"] for p in products if p["price"] > 0]
     ratings = [p["rating"] for p in products if p["rating"] > 0]
-    reviews = [p["ratings_total"] for p in products if p["ratings_total"] > 0]
-    bestsellers = sum(1 for p in products if p["is_bestseller"])
+    reviews = [p["reviews"] for p in products if p["reviews"] > 0]
 
     avg_price = sum(prices) / len(prices) if prices else 0
     avg_rating = sum(ratings) / len(ratings) if ratings else 0
     avg_reviews = sum(reviews) / len(reviews) if reviews else 0
-    estimated_supplier_price = avg_price * 0.25
-    estimated_margin = avg_price - estimated_supplier_price
+    supplier_price = avg_price * 0.25
+    margin = avg_price - supplier_price
 
     return {
         "average_price": round(avg_price, 2),
-        "estimated_supplier_price": round(estimated_supplier_price, 2),
-        "estimated_profit_margin": round(estimated_margin, 2),
-        "margin_percentage": round((estimated_margin / avg_price * 100) if avg_price > 0 else 0, 1),
+        "estimated_supplier_price": round(supplier_price, 2),
+        "estimated_profit_margin": round(margin, 2),
+        "margin_percentage": round((margin / avg_price * 100) if avg_price > 0 else 0, 1),
         "average_rating": round(avg_rating, 1),
         "average_reviews": round(avg_reviews),
-        "bestsellers_found": bestsellers,
-        "competition_level": "High" if avg_reviews > 1000 else "Medium" if avg_reviews > 200 else "Low"
+        "competition_level": "High 🔴" if avg_reviews > 1000 else "Medium 🟡" if avg_reviews > 200 else "Low 🟢"
     }
+
+def analyze_products(products, niche):
+    """Smart analysis without external AI API"""
+    analysis = f"=== DROPSHIPPING ANALYSIS: {niche.upper()} ===\n\n"
+    for i, p in enumerate(products[:5], 1):
+        supplier_price = round(p['price'] * 0.25, 2)
+        margin = round(p['price'] - supplier_price, 2)
+        margin_pct = round((margin / p['price'] * 100) if p['price'] > 0 else 0, 1)
+        reviews = p.get('reviews', 0)
+        competition = "Low 🟢" if reviews < 500 else "Medium 🟡" if reviews < 2000 else "High 🔴"
+        potential = "🔥 HIGH" if margin > 30 and p.get('rating', 0) >= 4.0 else "✅ MEDIUM" if margin > 15 else "⚠️ LOW"
+        analysis += f"""Product {i}: {p['title'][:70]}
+  💰 Retail Price: ${p['price']}
+  🏭 Est. Supplier Price: ${supplier_price}
+  📈 Est. Profit Margin: ${margin} ({margin_pct}%)
+  ⭐ Rating: {p.get('rating', 'N/A')}/5 ({reviews} reviews)
+  🏪 Source: {p['source']}
+  🏆 Competition: {competition}
+  🎯 Dropship Potential: {potential}
+  🔗 {p['link']}\n\n"""
+    return analysis
 
 @app.route("/", methods=["GET"])
 def home():
@@ -126,25 +130,20 @@ def analyze():
         if not data or "niche" not in data:
             return jsonify({
                 "error": "Please provide a niche",
-                "example": {"niche": "fitness equipment", "max_results": 10}
+                "example": {"niche": "wireless earbuds", "max_results": 10}
             }), 400
 
         niche = data.get("niche", "")
         max_results = min(data.get("max_results", 10), 20)
 
-        # Step 1: Search Amazon
-        products = search_amazon_products(niche, max_results)
+        products = search_products(niche, max_results)
         if isinstance(products, dict) and "error" in products:
             return jsonify({"error": products["error"]}), 500
-
         if not products:
             return jsonify({"error": "No products found for this niche"}), 404
 
-        # Step 2: Calculate metrics
         metrics = calculate_metrics(products)
-
-        # Step 3: AI Analysis
-        ai_analysis = analyze_with_ai(products, niche)
+        analysis = analyze_products(products, niche)
 
         return jsonify({
             "status": "success",
@@ -153,7 +152,7 @@ def analyze():
             "products_found": len(products),
             "metrics": metrics,
             "top_products": products[:5],
-            "ai_analysis": ai_analysis,
+            "analysis": analysis,
             "price_paid_usdc": 5.0
         })
 
@@ -164,19 +163,20 @@ def analyze():
 def trending():
     if request.method == "OPTIONS":
         return jsonify({}), 200
-    try:
-        trending_niches = [
-            "wireless earbuds", "phone stands", "LED lights room",
-            "fitness resistance bands", "portable charger",
-            "kitchen gadgets", "pet accessories", "home office desk accessories"
-        ]
-        return jsonify({
-            "status": "success",
-            "trending_niches": trending_niches,
-            "tip": "These niches have high demand and good margins for dropshipping"
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return jsonify({
+        "status": "success",
+        "trending_niches": [
+            "wireless earbuds",
+            "phone stands",
+            "LED lights room",
+            "fitness resistance bands",
+            "portable charger",
+            "kitchen gadgets",
+            "pet accessories",
+            "home office desk accessories"
+        ],
+        "tip": "These niches have high demand and good margins for dropshipping"
+    })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
