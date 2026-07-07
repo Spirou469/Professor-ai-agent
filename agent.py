@@ -4,27 +4,8 @@ import os
 import requests
 import hashlib
 import time
-import threading
 
-def start_croo_provider():
-    try:
-        import subprocess
-        import os
-        api_key = os.environ.get("CROO_API_KEY", "")
-        if api_key:
-            subprocess.Popen([
-                "python", "-c",
-                f"""
-import croo
-client = croo.Client(api_key='{api_key}')
-client.serve(host='0.0.0.0', port=8080)
-"""
-            ])
-    except Exception as e:
-        print(f"CROO provider error: {e}")
 
-# Start CROO provider in background
-threading.Thread(target=start_croo_provider, daemon=True).start()
 
 app = Flask(__name__)
 CORS(app, origins="*")
