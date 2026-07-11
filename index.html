@@ -807,7 +807,18 @@ async function unlockPro() {
   updateUI();
   showToast('🎉 Pro access unlocked! Unlimited analyses enabled.');
 }
-
+// Secret admin access via URL
+if(window.location.hash === '#admin2026'){
+  iP = true;
+  fU = false;
+  localStorage.setItem('pr_'+ID, '1');
+  localStorage.setItem('fu_'+ID, '0');
+  if(document.getElementById('upPanel')) document.getElementById('upPanel').style.display='none';
+  setTimeout(()=>{
+    updateUI();
+    toast('✅ Admin access activated!');
+  }, 500);
+}
 // Init
 applyTranslations();
 updateUI();
