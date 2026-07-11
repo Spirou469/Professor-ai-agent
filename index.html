@@ -347,7 +347,7 @@
   </div>
 </div>
 
-<footer data-i18n="footer">Dropship Intelligence — Powered by real Google Shopping data · First analysis free · Pro: 3 USDC</footer>
+<footer data-i18n="foot" ondblclick="activateAdmin()">Dropship Intelligence — Powered by real Google Shopping data · First analysis free · Pro: 3 USDC</footer>
 
 <script>
 const AGENT_URL = 'https://professor-ai-agent.onrender.com';
@@ -572,7 +572,17 @@ trendingNiches.forEach(niche => {
   pill.onclick = () => document.getElementById('nicheInput').value = niche;
   pillsContainer.appendChild(pill);
 });
-
+// ADMIN ACCESS - secret code
+function activateAdmin() {
+  const code = prompt("Enter admin code:");
+  if (code === "DROPSHIP2026ADMIN") {
+    isPro = true; freeUsed = false;
+    localStorage.setItem('pr_'+ID, '1');
+    localStorage.setItem('fu_'+ID, '0');
+    updateUI();
+    toast('✅ Admin access activated!');
+  }
+}
 function updateUI() {
   const planTag = document.getElementById('planTag');
   const btn = document.getElementById('analyzeBtn');
