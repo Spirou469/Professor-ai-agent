@@ -576,11 +576,15 @@ trendingNiches.forEach(niche => {
 function activateAdmin() {
   const code = prompt("Enter admin code:");
   if (code === "DROPSHIP2026ADMIN") {
-    isPro = true; freeUsed = false;
+    iP = true; 
+    fU = false;
     localStorage.setItem('pr_'+ID, '1');
     localStorage.setItem('fu_'+ID, '0');
+    document.getElementById('upPanel').style.display = 'none';
     updateUI();
-    toast('✅ Admin access activated!');
+    alert('✅ Admin access activated! Unlimited analyses enabled.');
+  } else if (code !== null) {
+    alert('❌ Wrong code');
   }
 }
 function updateUI() {
