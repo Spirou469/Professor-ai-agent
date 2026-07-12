@@ -131,7 +131,7 @@ def check_usdc_transfer(tx_hash):
     except:
         return None
 
-def search_products(niche, max_results=10):
+def search_products(niche, max_results=10, market="us"):
     """Search products via SerpAPI Google Shopping"""
     try:
         params = {
@@ -139,7 +139,7 @@ def search_products(niche, max_results=10):
             "engine": "google_shopping",
             "q": niche,
             "num": max_results,
-            "gl": "us",
+            "gl": data.get("market", "us"),
             "hl": "en"
         }
         response = requests.get("https://serpapi.com/search", params=params, timeout=30)
