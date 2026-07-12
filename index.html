@@ -259,7 +259,20 @@ footer{text-align:center;padding:36px;border-top:1px solid var(--border);color:v
             <select id="market">
               <option value="us">🇺🇸 USA</option>
               <option value="uk">🇬🇧 UK</option>
+              <option value="fr">🇫🇷 France</option>
               <option value="de">🇩🇪 Germany</option>
+              <option value="ca">🇨🇦 Canada</option>
+              <option value="au">🇦🇺 Australia</option>
+              <option value="br">🇧🇷 Brazil</option>
+              <option value="in">🇮🇳 India</option>
+              <option value="za">🇿🇦 South Africa</option>
+              <option value="ng">🇳🇬 Nigeria</option>
+              <option value="sn">🇸🇳 Senegal</option>
+              <option value="ae">🇦🇪 UAE</option>
+              <option value="jp">🇯🇵 Japan</option>
+              <option value="mx">🇲🇽 Mexico</option>
+              <option value="es">🇪🇸 Spain</option>
+              <option value="it">🇮🇹 Italy</option>
             </select>
           </div>
         </div>
@@ -289,7 +302,20 @@ footer{text-align:center;padding:36px;border-top:1px solid var(--border);color:v
             <select id="market2">
               <option value="us">🇺🇸 USA</option>
               <option value="uk">🇬🇧 UK</option>
+              <option value="fr">🇫🇷 France</option>
               <option value="de">🇩🇪 Germany</option>
+              <option value="ca">🇨🇦 Canada</option>
+              <option value="au">🇦🇺 Australia</option>
+              <option value="br">🇧🇷 Brazil</option>
+              <option value="in">🇮🇳 India</option>
+              <option value="za">🇿🇦 South Africa</option>
+              <option value="ng">🇳🇬 Nigeria</option>
+              <option value="sn">🇸🇳 Senegal</option>
+              <option value="ae">🇦🇪 UAE</option>
+              <option value="jp">🇯🇵 Japan</option>
+              <option value="mx">🇲🇽 Mexico</option>
+              <option value="es">🇪🇸 Spain</option>
+              <option value="it">🇮🇹 Italy</option>
             </select>
           </div>
           <div class="fld">
@@ -496,7 +522,7 @@ async function analyzeNiche(){
   btn.disabled=true;document.getElementById('btnTxt').textContent='⏳ Analyzing…';
   document.getElementById('res').innerHTML='<div class="ld"><div class="lr"></div><div class="lt">FETCHING LIVE DATA…</div></div>';
   try{
-    const r=await fetch(`${AGENT}/analyze`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche,max_results:parseInt(document.getElementById('maxR').value)})});
+    const r=await fetch(`${AGENT}/analyze`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche,max_results:parseInt(document.getElementById('maxR').value),market:document.getElementById('market').value})});
     const data=await r.json();
     if(data.error){document.getElementById('res').innerHTML=`<div class="s-er">❌ ${data.error}</div>`;return;}
     buildResults(data,'res','');
@@ -512,7 +538,7 @@ async function analyzeProduct(){
   btn.disabled=true;document.getElementById('btnTxt2').textContent='⏳ Analyzing…';
   document.getElementById('res2').innerHTML='<div class="ld"><div class="lr"></div><div class="lt">ANALYZING PRODUCT…</div></div>';
   try{
-    const r=await fetch(`${AGENT}/analyze`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche:product,max_results:10})});
+    const r=await fetch(`${AGENT}/analyze`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({niche:product,max_results:10,market:document.getElementById('market2').value})});
     const data=await r.json();
     if(data.error){document.getElementById('res2').innerHTML=`<div class="s-er">❌ ${data.error}</div>`;return;}
 
